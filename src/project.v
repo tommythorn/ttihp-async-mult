@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2024 Your Name
+ * Copyright (c) 2024 Tommy Thorn
  * SPDX-License-Identifier: Apache-2.0
  */
 
 `default_nettype none
 
-module tt_um_example (
+module tt_um_tommythorn_experiments (
     input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
     input  wire [7:0] uio_in,   // IOs: Input path
@@ -16,12 +16,32 @@ module tt_um_example (
     input  wire       rst_n     // reset_n - low to reset
 );
 
-  // All output pins must be assigned. If not used, assign to 0.
-  assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
-  assign uio_out = 0;
-  assign uio_oe  = 0;
+   // A very simple 2 entry 1b wide sync sram
+   // Inputs
+   // - clock
+   // - we
+   // - wa
+   // - wd
+   // - ra
+   // Ouput
+   // - rq
+   //
+   // The style here is deliberately explicit
+   reg		      sram0, sram1;
+   wire		      we, wa, wd, ra, rq;
+   assign {we, wa, wd, ra} = ui_in;
+   assign uo_out = ra == 0 ? sram0 : sram1;
+   always @(posedge clk)
+     if (we)
+       if (wa == 0)
+	 sram0 <= wd;
+       else 
+	 sram1 <= wd;
 
-  // List all unused inputs to prevent warnings
-  wire _unused = &{ena, clk, rst_n, 1'b0};
+   // All output pins must be assigned. If not used, assign to 0.
+   assign uio_out = 0;
+   assign uio_oe  = 0;
 
+   // List all unused inputs to prevent warnings
+   wire		      _unused = &{ena, clk, rst_n, 1'b0, ui_in[7:4]};
 endmodule

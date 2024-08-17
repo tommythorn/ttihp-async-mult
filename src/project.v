@@ -32,5 +32,5 @@ module tt_um_tommythorn_experiments (
    assign {uo_out,uio_out} = aa[`N-1:`N-16];
 
    // List all unused inputs to prevent warnings
-   wire _unused = &{ena, clk, rst_n, 1'b0, ui_in };
+   wire _unused = &{ena, clk, rst_n, 1'b0, ui_in, uio_in };
 endmodule

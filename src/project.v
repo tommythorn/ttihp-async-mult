@@ -25,6 +25,8 @@ module tt_um_tommythorn_experiments (
      if (rst_n == 0)
        a <= 0;
      else begin
+        // JUST TO BE CLEAR, yes I know this could simply have been
+        // `aa <= aa + a * 2 - 1` but that's not the point.
         aa <= a * a;
         a <= a + 1;
      end

@@ -16,32 +16,20 @@ module tt_um_tommythorn_experiments (
     input  wire       rst_n     // reset_n - low to reset
 );
 
-   // A very simple 2 entry 1b wide sync sram
-   // Inputs
-   // - clock
-   // - we
-   // - wa
-   // - wd
-   // - ra
-   // Ouput
-   // - rq
-   //
-   // The style here is deliberately explicit
-   reg		      sram0, sram1;
-   wire		      we, wa, wd, ra, rq;
-   assign {we, wa, wd, ra} = ui_in;
-   assign uo_out = ra == 0 ? sram0 : sram1;
-   always @(posedge clk)
-     if (we)
-       if (wa == 0)
-	 sram0 <= wd;
-       else 
-	 sram1 <= wd;
+   reg [31:0]	      a;
+   reg [31:0]	      aa;
 
-   // All output pins must be assigned. If not used, assign to 0.
-   assign uio_out = 0;
-   assign uio_oe  = 0;
+   always @(posedge clk)
+     if (rst_n == 0)
+       a <= 0;
+     else begin
+	aa <= a * a;
+	a <= a + 1;
+     end
+	
+   assign uio_oe  = ~0;
+   assign {uo_out,uio_out} = aa[31:16];
 
    // List all unused inputs to prevent warnings
-   wire		      _unused = &{ena, clk, rst_n, 1'b0, ui_in[7:4]};
+   wire _unused = &{ena, clk, rst_n, 1'b0, ui_in };
 endmodule

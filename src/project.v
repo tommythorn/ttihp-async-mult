@@ -4,7 +4,7 @@
  */
 
 `default_nettype none
-`define N 30
+`define N 23
 
 module tt_um_tommythorn_experiments (
     input  wire [7:0] ui_in,    // Dedicated inputs

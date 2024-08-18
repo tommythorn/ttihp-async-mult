@@ -35,7 +35,6 @@ module tt_um_tommythorn_experiments (
    reg s0;
    wire [`N-1:0] carry_out, sum_out;
    reg [`N-1:0] c, a1, carry, sum;
-   wire [`N-1:0] add = c & 1 ? a1 : 0;
 
    genvar        i;
    generate
@@ -44,30 +43,29 @@ module tt_um_tommythorn_experiments (
    endgenerate
 
    always @(posedge clk)
-     if (rst_n == 0) begin
+     if (!rst_n) begin
         a <= 0;
+	sum <= 0;
         s0 <= 1;
      end else if (s0) begin
         carry <= 0;
         sum <= 0;
-        c <= a;
-        a1 <= a;
-        a <= a + 1;
+        c <= sum ^ 3;
+        a1 <= sum ^ 3;
         s0 <= 0;
         $display("");
-        $display("Start %1d * %1d", a, a);
+        $display("Start %1d^2", sum^3);
      end else /* !s0 */ begin
+        $display("  iterate %d, %d, %d, %d", carry, sum, c, a1);
+        carry <= carry_out << 1;
+        sum <= sum_out;
+        c <= c >> 1;
+        a1 <= a1 << 1;
+
         if (c == 0 && carry == 0) begin
            aa <= sum;
            s0 <= 1;
-           $display("  iterate %d, %d, %d, %d, %d", carry, sum, c, a1, add);
            $display("Result %d", sum);
-        end else begin
-           $display("  iterate %d, %d, %d, %d, %d", carry, sum, c, a1, add);
-           carry <= carry_out << 1;
-           sum <= sum_out;
-           c <= c >> 1;
-           a1 <= a1 << 1;
         end
      end
 `endif

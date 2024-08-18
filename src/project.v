@@ -35,6 +35,7 @@ module tt_um_tommythorn_experiments (
    reg s0;
    wire [`N-1:0] carry_out, sum_out;
    reg [`N-1:0] c, a1, carry, sum;
+   reg		c_is_zero, carry_is_zero;
 
    genvar        i;
    generate
@@ -53,6 +54,8 @@ module tt_um_tommythorn_experiments (
         c <= sum ^ 3;
         a1 <= sum ^ 3;
         s0 <= 0;
+	c_is_zero <= 0;
+	carry_is_zero <= 0;
         $display("");
         $display("Start %1d^2", sum^3);
      end else /* !s0 */ begin
@@ -62,11 +65,15 @@ module tt_um_tommythorn_experiments (
         c <= c >> 1;
         a1 <= a1 << 1;
 
-        if (c == 0 && carry == 0) begin
+        if (c_is_zero && carry_is_zero) begin
            aa <= sum;
            s0 <= 1;
            $display("Result %d", sum);
         end
+
+	// Pipeline
+	c_is_zero <= c == 0;
+	carry_is_zero <= carry_is_zero == 0;
      end
 `endif
 

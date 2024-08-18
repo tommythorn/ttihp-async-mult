@@ -40,7 +40,7 @@ module tt_um_tommythorn_experiments (
    genvar        i;
    generate
       for (i = 0; i < `N; i = i + 1)
-        sky130_fd_sc_hd__fa fa(.COUT(carry_out[i]), .SUM(sum_out[i]), .A(a1[i] & c[0]), .B(sum[i]), .CIN(carry[i]));
+        sky130_fd_sc_hd__fa_1 fa(.COUT(carry_out[i]), .SUM(sum_out[i]), .A(a1[i] & c[0]), .B(sum[i]), .CIN(carry[i]));
    endgenerate
 
    always @(posedge clk)
@@ -81,7 +81,7 @@ module tt_um_tommythorn_experiments (
 endmodule
 
 `ifdef SIM
-module sky130_fd_sc_hd__fa(COUT, SUM, A, B, CIN);
+module sky130_fd_sc_hd__fa_1(COUT, SUM, A, B, CIN);
    output COUT;
    output SUM ;
    input  A   ;

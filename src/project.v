@@ -4,7 +4,8 @@
  */
 
 `default_nettype none
-`define N 23
+`define N 24
+`define SIMPLE_MULT
 
 module tt_um_tommythorn_experiments (
     input  wire [7:0] ui_in,    // Dedicated inputs
@@ -21,59 +22,56 @@ module tt_um_tommythorn_experiments (
    reg [`N-1:0]       aa;
 
 `ifdef SIMPLE_MULT
-   always @(posedge clk)
-     if (rst_n == 0)
-       a <= 0;
-     else begin
-        // JUST TO BE CLEAR, yes I know this could simply have been
-        // `aa <= aa + a * 2 - 1` but that's not the point.
-        aa <= a * a;
-        a <= a + 1;
-     end
+   wire [`N-1:0]      mult;
+   assign mult = a * a;
+   always @(posedge clk) begin
+      aa <= mult;
+      $display("Result %d", mult);
+      a <= !rst_n ? 0 : mult ^ {mult[`N-1:`N/4],2'd3}; // found experimentally to randomize quite well
+   end
 `else
    /* Iterative multiplier using carry-save */
    reg s0;
    wire [`N-1:0] carry_out, sum_out;
-   reg [`N-1:0] c, a1, carry, sum;
-   reg		c_is_zero, carry_is_zero;
+   reg [`N-1:0] c, carry, sum;
+   reg          stop, carry_is_zero;
 
-   genvar        i;
+   genvar i;
    generate
       for (i = 0; i < `N; i = i + 1)
-        sky130_fd_sc_hd__fa_1 fa(.COUT(carry_out[i]), .SUM(sum_out[i]), .A(a1[i] & c[0]), .B(sum[i]), .CIN(carry[i]));
+        sky130_fd_sc_hd__fa_1 fa(.COUT(carry_out[i]), .SUM(sum_out[i]), .A(a[i] & c[0]), .B(sum[i]), .CIN(carry[i]));
    endgenerate
 
    always @(posedge clk)
      if (!rst_n) begin
-        a <= 0;
-	sum <= 0;
+        sum <= 0;
         s0 <= 1;
      end else if (s0) begin
         carry <= 0;
         sum <= 0;
-        c <= sum ^ 3;
-        a1 <= sum ^ 3;
+        c <= sum ^ {sum[`N-1:`N/4],2'd3};
+        a <= sum ^ {sum[`N-1:`N/4],2'd3};
         s0 <= 0;
-	c_is_zero <= 0;
-	carry_is_zero <= 0;
+        stop <= 0;
         $display("");
-        $display("Start %1d^2", sum^3);
+        $display("Start %1d^2", sum ^ {sum[`N-1:`N/4],2'd3});
      end else /* !s0 */ begin
-        $display("  iterate %d, %d, %d, %d", carry, sum, c, a1);
+        $display("  iterate %d, %d, %d, %d", carry, sum, c, a);
         carry <= carry_out << 1;
         sum <= sum_out;
         c <= c >> 1;
-        a1 <= a1 << 1;
+        a <= a << 1;
 
-        if (c_is_zero && carry_is_zero) begin
+        if (stop) begin
            aa <= sum;
            s0 <= 1;
            $display("Result %d", sum);
         end
 
-	// Pipeline
-	c_is_zero <= c == 0;
-	carry_is_zero <= carry_is_zero == 0;
+        // Pipelining the stop condition means we take one iteration
+        // too much.  Another choice is to only pipeline c == 0 as
+        // that condition is _frequently_ true ahead of carry == 0.
+        stop <= c == 0 && carry == 0;
      end
 `endif
 
@@ -110,7 +108,7 @@ module tb;
 
       #20
         rst_n = 1;
-      #10000 $finish;
+      #20000 $finish;
    end
 endmodule
 `endif

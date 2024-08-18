@@ -33,15 +33,23 @@ module tt_um_tommythorn_experiments (
 `else
    /* Iterative multiplier using carry-save */
    reg s0;
-   reg [`N-1:0] sp, sn, c, a1;
+   wire [`N-1:0] carry_out, sum_out;
+   reg [`N-1:0] c, a1, carry, sum;
    wire [`N-1:0] add = c & 1 ? a1 : 0;
+
+   genvar        i;
+   generate
+      for (i = 0; i < `N; i = i + 1)
+        sky130_fd_sc_hd__fa fa(.COUT(carry_out[i]), .SUM(sum_out[i]), .A(a1[i] & c[0]), .B(sum[i]), .CIN(carry[i]));
+   endgenerate
+
    always @(posedge clk)
      if (rst_n == 0) begin
         a <= 0;
         s0 <= 1;
      end else if (s0) begin
-        sp <= 0;
-        sn <= ~0;
+        carry <= 0;
+        sum <= 0;
         c <= a;
         a1 <= a;
         a <= a + 1;
@@ -49,21 +57,21 @@ module tt_um_tommythorn_experiments (
         $display("");
         $display("Start %1d * %1d", a, a);
      end else /* !s0 */ begin
-        if (c == 0 && sp == 0) begin
-           aa <= ~sn;
+        if (c == 0 && carry == 0) begin
+           aa <= sum;
            s0 <= 1;
-           $display("  iterate %d, %d, %d, %d, %d", sp, ~sn, c, a1, add);
-           $display("Result %d", ~sn);
+           $display("  iterate %d, %d, %d, %d, %d", carry, sum, c, a1, add);
+           $display("Result %d", sum);
         end else begin
-           $display("  iterate %d, %d, %d, %d, %d", sp, ~sn, c, a1, add);
-           sp <= (sp & ~sn | add & (sp | ~sn)) << 1;
-           sn <= sp ^ sn ^ add;
+           $display("  iterate %d, %d, %d, %d, %d", carry, sum, c, a1, add);
+           carry <= carry_out << 1;
+           sum <= sum_out;
            c <= c >> 1;
            a1 <= a1 << 1;
         end
      end
 `endif
-        
+
    assign uio_oe  = ~0;
    assign {uo_out,uio_out} = aa[`N-1:`N-16];
 
@@ -73,6 +81,17 @@ module tt_um_tommythorn_experiments (
 endmodule
 
 `ifdef SIM
+module sky130_fd_sc_hd__fa(COUT, SUM, A, B, CIN);
+   output COUT;
+   output SUM ;
+   input  A   ;
+   input  B   ;
+   input  CIN ;
+
+   assign COUT = B & CIN | (CIN | B) & A;
+   assign SUM  = ((A | CIN | B) & !(B & CIN | (CIN | B) & A)) | CIN & A & B;
+endmodule
+
 module tb;
    reg clk, rst_n;
 

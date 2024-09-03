@@ -74,29 +74,6 @@ module comp_cntr#(parameter w = 32)
        xdata = xnext;
 endmodule
 
-module comp_sink#(parameter id = "??",
-                  parameter w = 32)
-   (input reset, inout wire `chan channel);
-
-   delay #(5) inst(!reset & channel`req, channel`ack);
-
-`ifdef SIM
-   always @(posedge channel`ack)
-     if (!reset) $display("%05d  %-4s: Sink %1d", $time, id, channel`data);
-`endif
-endmodule
-
-module comp_wire#(parameter id = "??",
-                 parameter w = 32)
-   (input reset,
-    inout `chan in_chan,
-    inout `chan ou_chan);
-
-   assign ou_chan`data = in_chan`data;
-   assign ou_chan`req = in_chan`req;
-   assign in_chan`ack = ou_chan`ack;
-endmodule
-
 `ifdef SIM
 module comp_spy#(parameter id = "??",
                  parameter w = 32)
@@ -223,16 +200,25 @@ module comp_elem#(parameter w = 100,
     inout `chan y);
 
    (* keep *) reg [w-1:0] ydata;
-   wire	       delayed_yreq;
 
-   cgate#(valid) cg(reset, !y`ack, x`req, x`ack);
-   delay #(delay) d0(x`ack, delayed_yreq);
-   assign y`req = delayed_yreq & x`ack;
+   // Being explicit here to try to flesh out a yosys complaint about
+   // conflicting drivers for x`ack
+
+   wire	  x_ack;
+
+   cgate#(valid) cg_elem(reset, !y`ack, x`req, x_ack);
+
+   assign x`ack = x_ack;
+
+   wire	  delayed_yreq;
+   delay #(delay) d0_elem(x_ack, delayed_yreq);
+
+   assign y`req = delayed_yreq & x_ack;
    assign y`data = ydata;
 
    always @* if (reset)
      ydata = data;
-   else if (x`ack)
+   else if (x_ack)
      ydata = x`data;
 endmodule
 

@@ -6,29 +6,39 @@
 /* verilator lint_off UNOPTFLAT */
 module delay#(parameter d = 1)
    (input x, output reg y);
-   reg slow_y;
 `ifdef SIM
+   reg slow_y;
    always @* slow_y = #d x;
 `else
+   wire	slow_y;
    // XXX Seriously need to characterize this
+   // XXX add generate depending on the delays
    sky130_fd_sc_hd__dlygate4sd3_1 d0(slow_y, x);
 `endif
    always @* y = slow_y & x;
 endmodule
 
 // Muller C element
+`ifdef SIM
+
 module cgate#(parameter init = 0)
    (input reset, input a, input b, output reg q);
    always @*
      if (reset)
        q = init;
      else if (a == b)
-`ifdef SIM
        q = #2 b;
-`else
-       q = b;
-`endif
 endmodule
+
+`else
+
+module cgate#(parameter init = 0)
+   (input reset, input a, input b, output wire q);
+   sky130_fd_sc_hd__maj3_1
+     maj(.X(q), .A(reset ? init : a), .B(reset ? init : b), .C(q));
+endmodule
+
+`endif
 
 module comp_const#(parameter w = 32,
                    parameter k = 42)
@@ -81,11 +91,11 @@ module comp_wire#(parameter id = "??",
    assign in_chan`ack = ou_chan`ack;
 endmodule
 
+`ifdef SIM
 module comp_spy#(parameter id = "??",
                  parameter w = 32)
    (inout `chan x);
 
-`ifdef SIM
    reg `chan               prev = 0;
 
    always @* if (x != prev) begin
@@ -119,14 +129,12 @@ module comp_spy#(parameter id = "??",
 
       prev = x;
    end
-`endif
 endmodule
 
 module comp_spy3#(parameter id = "??",
                   parameter w = 32)
    (inout `chan3 x);
 
-`ifdef SIM
    reg `chan               prev = 0;
 
    always @* if (x != prev) begin
@@ -160,13 +168,11 @@ module comp_spy3#(parameter id = "??",
 
       prev = x;
    end
-`endif
 endmodule
 
 module comp_spy0#(parameter id = "??")
    (inout `ctl x);
 
-`ifdef SIM
    reg `ctl prev = 0;
 
    always @* if (x != prev) begin
@@ -189,8 +195,8 @@ module comp_spy0#(parameter id = "??")
 
       prev = x;
    end
-`endif
 endmodule
+`endif
 
 module comp_elemV#(parameter w = 1,
                   parameter data = 0,
@@ -210,8 +216,8 @@ module comp_elem#(parameter w = 100,
     inout `chan x,
     inout `chan y);
 
-   reg [w-1:0]     ydata;
-   wire           delayed_yreq;
+   (* keep *) reg [w-1:0] ydata;
+   wire	       delayed_yreq;
 
    cgate#(valid) cg(reset, !y`ack, x`req, x`ack);
    delay #(delay) d0(x`ack, delayed_yreq);
@@ -383,45 +389,6 @@ module comp_bundled_isnz#(parameter w = 32)
    assign y[w+2:2]  = {x`data != 0,x`data};
 endmodule
 
-module comp_add#(parameter w = 32)
-   (input reset,
-    inout `chan2 x,
-    inout `chan y);
-
-   wire [w-1:0] a = x`data;
-   wire [w-1:0] b = x`data1;
-
-   assign x`ack = y`ack;
-   assign y`req = x`req;
-   assign y`data = a + b;
-endmodule
-
-module comp_add1#(parameter w = 32)
-   (input reset,
-    inout `chan x,
-    inout `chan y);
-
-   reg yreq;
-`ifdef SIM
-   always @* yreq = #21 reset ? 0 : x`req;
-`else
-   always @* yreq = reset ? 0 : x`req;
-`endif
-   assign x`ack = y`ack;
-   assign y`req = yreq;
-   assign y`data = x`data + 1;
-endmodule
-
-module comp_sub1#(parameter w = 32)
-   (input reset,
-    inout `chan x,
-    inout `chan y);
-
-   assign x`ack = y`ack;
-   assign y`req = x`req;
-   assign y`data = x`data - 1;
-endmodule
-
 // Multiplication step (XXX doesn't take advantage of skipping add)
 //
 // if (b&1) == 1:
@@ -510,6 +477,7 @@ module tokenflow#(parameter w = 16)
    wire [3*w+2:0] tc4; // Bundled control + data
    wire `ctl c10ctl, c11ctl, c12ctl;
 
+`ifdef SIM
    comp_spy3 #("in", w) si(in_ch);
    comp_spy3 #("out", w) so(ou_ch3);
 
@@ -525,6 +493,7 @@ module tokenflow#(parameter w = 16)
    comp_spy0 #("c10ctl") s10(c10ctl);
    comp_spy0 #("c11ctl") s11(c11ctl);
    comp_spy0 #("c12ctl") s12(c12ctl);
+`endif
 
    // while a != 0
    comp_join0 #(3*w)    i1(reset, in_ch, c12ctl, c1);

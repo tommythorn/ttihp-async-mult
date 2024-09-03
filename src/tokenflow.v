@@ -5,17 +5,23 @@
 
 /* verilator lint_off UNOPTFLAT */
 module delay#(parameter d = 1)
-   (input x, output reg y);
 `ifdef SIM
+
+   (input x, output reg y);
    reg slow_y;
    always @* slow_y = #d x;
+   always @* y = slow_y & x;
+
 `else
+
+   (input x, output wire y);
    wire	slow_y;
    // XXX Seriously need to characterize this
    // XXX add generate depending on the delays
-   sky130_fd_sc_hd__dlygate4sd3_1 d0(slow_y, x);
+   sky130_fd_sc_hd__dlygate4sd3_1 d0(.X(slow_y), .A(x));
+   assign y = slow_y & x;
+
 `endif
-   always @* y = slow_y & x;
 endmodule
 
 // Muller C element

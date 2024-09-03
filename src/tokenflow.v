@@ -1,6 +1,5 @@
 /* verilator lint_off LATCH */
 `default_nettype none
-`timescale 1ns / 1ns
 
 `include "tokenflow.h"
 
@@ -24,7 +23,11 @@ module cgate#(parameter init = 0)
      if (reset)
        q = init;
      else if (a == b)
+`ifdef SIM
        q = #2 b;
+`else
+       q = b;
+`endif
 endmodule
 
 module comp_const#(parameter w = 32,
@@ -397,7 +400,11 @@ module comp_add1#(parameter w = 32)
     inout `chan y);
 
    reg yreq;
+`ifdef SIM
    always @* yreq = #21 reset ? 0 : x`req;
+`else
+   always @* yreq = reset ? 0 : x`req;
+`endif
    assign x`ack = y`ack;
    assign y`req = yreq;
    assign y`data = x`data + 1;

@@ -1,3 +1,7 @@
+`ifdef SIM
+`timescale 1ns / 1ns
+`endif
+
 `define ack [0]
 `define req [1]
 `define ctl [1:0]

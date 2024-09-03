@@ -307,9 +307,11 @@ module comp_merge#(parameter w = 32,
    delay #(delay) d(x`req | y`req, z`req);
    // assign z`req = x`req | y`req; RACY
    assign z`data = /*x`req*/ sel ? x`data : y`data;
+`ifdef SIM
    always @*
      if (x`req & !x`ack & y`req & !y`ack)
        $display("%05d  merge on two active channels!! %d vs %d", $time, x`ctl, y`ctl);
+`endif
 /*
    always @*
      if (z`req)

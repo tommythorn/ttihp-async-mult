@@ -12,7 +12,7 @@ module delay#(parameter d = 1)
    always @* slow_y = #d x;
 `else
    // XXX Seriously need to characterize this
-   sky130_fd_sc_hd__dlygate4sd3 d0(x, slow_y);
+   sky130_fd_sc_hd__dlygate4sd3_1 d0(x, slow_y);
 `endif
    always @* y = slow_y & x;
 endmodule

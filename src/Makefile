@@ -3,4 +3,4 @@ test:
 	./project
 
 lint:
-	verilator --lint-only --timing --top-module tt_um_tommythorn_experiments project.v tokenflow.v
+	verilator --lint-only --timing --top-module tt_um_tommythorn_maxbw project.v tokenflow.v

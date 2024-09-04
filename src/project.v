@@ -7,7 +7,7 @@
 
 `include "tokenflow.h"
 
-module tt_um_tommythorn_experiments (
+module tt_um_tommythorn_maxbw (
     input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
     input  wire [7:0] uio_in,   // IOs: Input path
@@ -40,7 +40,7 @@ module tb;
    wire        req;
    wire [7:0]  ui_in;
 
-   tt_um_tommythorn_experiments
+   tt_um_tommythorn_maxbw
      insn(.clk(clk), .rst_n(rst_n),
           .ui_in(ui_in), .uio_out(data[14:7]), .uo_out({data[6:0],req}));
 

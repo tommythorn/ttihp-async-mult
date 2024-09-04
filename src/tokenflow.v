@@ -83,14 +83,15 @@ module comp_cntr#(parameter w = 32)
    comp_delay #(w*2) inst(!reset & !x`ack, x`req);
 
    always @*
-     if (reset) begin
+     if (reset)
         xnext = 0;
-        xdata = 0;
-     end else if (x`req & !x`ack)
+     else if (x`req & !x`ack)
        xnext = xdata + 1;
 
    always @*
-     if (!x`req & !x`ack)
+     if (reset)
+       xdata = 0; // XXX I don't think I actually need this ...
+     else if (!x`req & !x`ack)
        xdata = xnext;
 endmodule
 

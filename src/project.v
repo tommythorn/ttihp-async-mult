@@ -33,7 +33,7 @@ module tt_um_tommythorn_experiments (
    wire _unused = &{ena, clk, rst_n, 1'b0, ui_in, uio_in };
 endmodule
 
-`ifdef SIM
+`ifdef mySIM
 module tb;
    reg clk, rst_n;
    wire [14:0] data;

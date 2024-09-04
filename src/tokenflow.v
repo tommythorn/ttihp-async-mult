@@ -3,25 +3,36 @@
 
 `include "tokenflow.h"
 
-/* verilator lint_off UNOPTFLAT */
-module comp_delay#(parameter delay = 1)
+/* This is a sad and wasteful way to slow down a signal */
+module min_delay(input wire x, output reg y);
 `ifdef SIM
-
-   (input x, output reg y);
-   reg slow_y;
-   always @* slow_y = #delay x;
-   always @* y = slow_y & x;
-
+   always @* y = #1 x;
 `else
+   sky130_fd_sc_hd__buf_1 buf_inst(.X(y), .A(x));
 
-   (input x, output wire y);
-   wire	slow_y;
-   // XXX Seriously need to characterize this
-   // XXX add generate depending on the delays
-   sky130_fd_sc_hd__dlygate4sd3_1 d0(.X(slow_y), .A(x));
-   assign y = slow_y & x;
+   /* I'm hitting "Klayout feol failed with 2 DRC violations" so in
+    desperation I'm trying a more conventional approach to delays.
 
+    // XXX Seriously need to characterize this
+    // XXX add generate depending on the delays
+    sky130_fd_sc_hd__dlygate4sd3_1 d0(.X(y), .A(x));
+    */
 `endif
+endmodule
+
+/* verilator lint_off UNOPTFLAT */
+module comp_delay#(parameter delay = 10)
+   (input x, output wire y);
+
+   (* keep *) wire [delay:0] inv_chain;
+   assign inv_chain[0] = x;
+
+   genvar i;
+   generate
+      for (i = 0; i < delay; i = i + 1)
+	min_delay min_delay_inst(inv_chain[i], inv_chain[i + 1]);
+   endgenerate
+   assign y = inv_chain[delay] & x;
 endmodule
 
 // Muller C element

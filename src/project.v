@@ -59,7 +59,7 @@ module tb;
 
       #20
         rst_n = 1;
-      #20000 $finish;
+      #4100 $finish;
    end
 endmodule
 `endif

@@ -4,12 +4,12 @@
 `include "tokenflow.h"
 
 /* verilator lint_off UNOPTFLAT */
-module delay#(parameter d = 1)
+module comp_delay#(parameter delay = 1)
 `ifdef SIM
 
    (input x, output reg y);
    reg slow_y;
-   always @* slow_y = #d x;
+   always @* slow_y = #delay x;
    always @* y = slow_y & x;
 
 `else
@@ -49,7 +49,7 @@ endmodule
 module comp_const#(parameter w = 32,
                    parameter k = 42)
    (input reset, inout wire `chan channel);
-   delay #(3) inst(!channel`ack, channel`req);
+   comp_delay #(3) inst(!channel`ack, channel`req);
    assign channel`data = k;
 endmodule
 
@@ -60,7 +60,7 @@ module comp_cntr#(parameter w = 32)
 
    assign x`data = xdata;
 
-   delay #(3) inst(!reset & !x`ack, x`req);
+   comp_delay #(3) inst(!reset & !x`ack, x`req);
 
    always @*
      if (reset) begin
@@ -211,7 +211,7 @@ module comp_elem#(parameter w = 100,
    assign x`ack = x_ack;
 
    wire	  delayed_yreq;
-   delay #(delay) d0_elem(x_ack, delayed_yreq);
+   comp_delay #(delay) d0_elem(x_ack, delayed_yreq);
 
    assign y`req = delayed_yreq & x_ack;
    assign y`data = ydata;
@@ -232,7 +232,7 @@ module comp_elem0#(parameter valid = 0,
    wire delayed_yreq;
 
    cgate#(valid) cg(reset, !y`ack, x`req, x`ack);
-   delay #(delay) d0(x`ack, delayed_yreq);
+   comp_delay #(delay) d0(x`ack, delayed_yreq);
    assign y`req = delayed_yreq & x`ack;
 endmodule
 
@@ -302,7 +302,7 @@ module comp_merge#(parameter w = 32,
 
    cgate cg2(reset, z`ack, x`req, x`ack);
    cgate cg3(reset, z`ack, y`req, y`ack);
-   delay #(delay) d(x`req | y`req, z`req);
+   comp_delay #(delay) delay_inst(x`req | y`req, z`req);
    // assign z`req = x`req | y`req; RACY
    assign z`data = /*x`req*/ sel ? x`data : y`data;
 `ifdef SIM
@@ -464,7 +464,7 @@ module tokenflow#(parameter w = 16)
     * output ou_ch3
     */
 
-   wire `chan3 c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13;
+   wire `chan3 c1, c2, c3, c5, c6, c7, c8, c9;
 
    wire [3*w+2:0] tc4; // Bundled control + data
    wire `ctl c10ctl, c11ctl, c12ctl;

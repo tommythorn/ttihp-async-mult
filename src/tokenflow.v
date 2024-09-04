@@ -80,7 +80,7 @@ module comp_cntr#(parameter w = 32)
 
    assign x`data = xdata;
 
-   comp_delay #(3) inst(!reset & !x`ack, x`req);
+   comp_delay #(w*2) inst(!reset & !x`ack, x`req);
 
    always @*
      if (reset) begin
@@ -312,7 +312,7 @@ endmodule
 // wrong data.  We thus have to delay the request by an amount that
 // exceeds the data delay
 module comp_merge#(parameter w = 32,
-                   parameter delay = 2)
+                   parameter delay = 4)
    (input reset,
     inout `chan x, inout `chan y,
     inout `chan z);
@@ -511,10 +511,10 @@ module tokenflow#(parameter w = 16)
    comp_join0 #(3*w)    i1(reset, in_ch, c12ctl, c1);
 
    comp_merge #(3*w)    i2(reset, c8, c1, c2);
-   comp_elem #(3*w)     i3(reset, c2, c3);
+   comp_elem #(3*w, w)  i3(reset, c2, c3);
    loop_cond #(w)       i4(reset, c3, tc4);
    comp_bdemux #(3*w)   i5(reset, tc4, c9, c5);
-   comp_elem #(3*w)     i6(reset, c5, c6);
+   comp_elem #(3*w, 3*w) i6(reset, c5, c6);
    mulstep #(w)         i7(reset, c6, c7);
    comp_elem  #(3*w)    i8(reset, c7, c8);
 

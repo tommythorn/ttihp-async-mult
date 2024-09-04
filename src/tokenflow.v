@@ -265,12 +265,12 @@ module comp_elemV0#(parameter delay = 2)
    comp_elem0 #(.valid(1), .delay(delay)) i (reset, x, y);
 endmodule
 
-module comp_fork#(parameter w = 32, parameter wz = 32)
+module comp_fork#(parameter w = 32)
    (input reset,
     inout `chan x,
-    inout `chan y, inout [wz+1:0] z);
+    inout `chan y, inout `chan z);
    assign y`data = x`data;
-   assign z`data = x[wz+1:2];
+   assign z`data = x`data;
    assign y`req = x`req;
    assign z`req = x`req;
    cgate c(reset, y`ack, z`ack, x`ack);

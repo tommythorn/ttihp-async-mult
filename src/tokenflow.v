@@ -382,6 +382,22 @@ module comp_bdemux#(parameter w = 32)
    assign z`data = ctlx`data;
 endmodule
 
+module comp_add1#(parameter w = 32)
+   (input reset,
+    inout `chan x,
+    inout `chan y);
+
+   reg yreq;
+`ifdef SIM
+   always @* yreq = #21 reset ? 0 : x`req;
+`else
+   always @* yreq = reset ? 0 : x`req;
+`endif
+   assign x`ack = y`ack;
+   assign y`req = yreq;
+   assign y`data = x`data + 1;
+endmodule
+
 module comp_isnonzero#(parameter w = 32)
    (input reset,
     inout `chan x,

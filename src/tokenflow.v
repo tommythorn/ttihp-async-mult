@@ -50,19 +50,10 @@ endmodule
 `else
 
 module cgate#(parameter init = 0)
-   (input reset, input a, input b, output reg q);
-   always @*
-     if (reset)
-       q = init;
-     else if (a == b)
-       q = b;
-endmodule
-
-/*module cgate#(parameter init = 0)
    (input reset, input a, input b, output wire q);
-   sky130_fd_sc_hd__maj3_1
+   sky130_fd_sc_hd__maj3_2
      maj(.X(q), .A(reset ? init : a), .B(reset ? init : b), .C(q));
-endmodule*/
+endmodule
 
 `endif
 

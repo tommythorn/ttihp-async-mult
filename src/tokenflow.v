@@ -463,6 +463,7 @@ module tokenflow#(parameter w = 16)
    comp_spy #("ci3", w) sii3(ci3);
    comp_spy #("ci4", w) sii4(ci4);
    comp_spy #("out", w) sii6(ou_ch);
+   comp_spy #("counter", w) sii5(counter_ch);
 `endif
 
    comp_add1 #(w)               ii0(reset, ci0, ci1);
@@ -470,8 +471,6 @@ module tokenflow#(parameter w = 16)
    comp_elem #(.w(w), .data(0)) ii2(reset, ci2, ci3);
    comp_elemV #(.w(w))          ii3(reset, ci3, ci4);
    comp_fork #(w)               ii4(reset, ci4, ci0, counter_ch);
-
-   comp_spy #("counter", w) sii5(counter_ch);
 
    // Replicate c to (c,c,c)
    assign in_ch`data = counter_ch`data;

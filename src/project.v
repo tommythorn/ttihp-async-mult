@@ -45,13 +45,17 @@ module tb;
           .ui_in(ui_in), .uio_out(data[14:7]), .uo_out({data[6:0],req}));
 
    // Tie ACK to REQ for a continous stream of 0, 2, 6, 12, 20, ..., x*(x+1)
-   assign ui_in[0] = req;
+   assign ui_in[0] = req & rst_n;
 
    always @(posedge req)
      $display("Got %d", data);
 
    always #5 clk = !clk;
    initial begin
+      $dumpfile("tokenflow.vcd");
+      $dumpvars;
+      $monitor(">> %05d  R%d A%d %1d", $time, req, ui_in[0], data);
+
       clk = 1;
       rst_n = 0;
 
@@ -59,6 +63,9 @@ module tb;
 
       #20
         rst_n = 1;
+
+      $display("Out of Reset");
+
       #4100 $finish;
    end
 endmodule

@@ -217,7 +217,7 @@ endmodule
 
 // Stupid Verilog
 module comp_elem0#(parameter valid = 0,
-                   parameter delay = 2)
+                   parameter delay = 1)
    (input reset,
     inout `ctl x,
     inout `ctl y);
@@ -231,7 +231,7 @@ endmodule
 
 module comp_elemV#(parameter w = 1,
                   parameter data = 0,
-                  parameter delay = 2)
+                  parameter delay = 1)
    (input reset,
     inout `chan x,
     inout `chan y);
@@ -239,7 +239,7 @@ module comp_elemV#(parameter w = 1,
    comp_elem #(.valid(1), .w(w), .data(data), .delay(delay)) i (reset, x, y);
 endmodule
 
-module comp_elemV0#(parameter delay = 2)
+module comp_elemV0#(parameter delay = 1)
    (input reset,
     inout `ctl x,
     inout `ctl y);
@@ -512,7 +512,7 @@ module tokenflow#(parameter w = 16)
     * output ou_ch3
     */
 
-   wire `chan3 c1, c2, c3, c5, c6, c7, c8, c9;
+   wire `chan3 c1, c2, c3, c5, c54, c55, c6, c7, c8, c9;
 
    wire [3*w+2:0] tc4; // Bundled control + data
    wire `ctl c10ctl, c11ctl, c12ctl;
@@ -544,7 +544,9 @@ module tokenflow#(parameter w = 16)
    comp_bdemux #(3*w)   i5(reset, tc4, c9, c5);
    comp_elem #(3*w, 3*w) i6(reset, c5, c6);
    mulstep #(w)         i7(reset, c6, c7);
-   comp_elem  #(3*w)    i8(reset, c7, c8);
+   comp_elem  #(3*w, 3*w) i8(reset, c7, c54);
+   mulstep #(w)         i77(reset, c54, c55);
+   comp_elem  #(3*w)    i78(reset, c55, c8);
 
    comp_fork0  #(3*w)   i9(reset, c9, ou_ch3, c10ctl);
    comp_elem0           i10(reset, c10ctl, c11ctl);

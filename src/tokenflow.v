@@ -8,15 +8,11 @@ module min_delay(input wire reset, input wire x, output reg y);
 `ifdef SIM
    always @* y = #1 !reset & x;
 `else
-   sky130_fd_sc_hd__buf_1 buf_inst(.X(y), .A(x));
+   // sky130_fd_sc_hd__buf_1 buf_inst(.X(y), .A(x));
 
-   /* I'm hitting "Klayout feol failed with 2 DRC violations" so in
-    desperation I'm trying a more conventional approach to delays.
-
-    // XXX Seriously need to characterize this
-    // XXX add generate depending on the delays
-    sky130_fd_sc_hd__dlygate4sd3_1 d0(.X(y), .A(x));
-    */
+   // XXX Seriously need to characterize this
+   // XXX add generate depending on the delays
+   sky130_fd_sc_hd__dlygate4sd3_2 d0(.X(y), .A(x));
 `endif
 endmodule
 

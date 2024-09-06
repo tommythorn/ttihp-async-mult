@@ -2,8 +2,6 @@
 
 # A simple asynchronous multiplier example
 
-This is closely following [Introduction to Asynchronous Circuit Design](https://orbit.dtu.dk/files/215895041/JSPA_async_book_2020_PDF.pdf)
-
 This design emits a sequence of `r` = x^2+x, for x=0,1,2,... on the
 outputs using the handshake protocol (tie ack to req to get free
 running sequence).  Well, in truth, we use 26-bits of internal
@@ -29,17 +27,20 @@ loop:
   output (c)
 ```
 
-which was hand translated into a
+which was hand translated (roughly following [Introduction to
+Asynchronous Circuit
+Design](https://orbit.dtu.dk/files/215895041/JSPA_async_book_2020_PDF.pdf)
+) into a token flow graph:
 
-![token-flow graph](docs/graph.svg)<img src="docs/graph.svg" width="33" height="33">
+![token-flow graph](docs/graph.svg)
 
-(Note, I use a simpler, less expensive, construction for the
+Note, I use a simpler, less expensive, construction for the
 conditional iteration as having independent control-flow for the
-trivial condition is overkill.)
+trivial condition is overkill.
 
-The logic was implemented with four-phase bundled data.  Alas, I'm
-still working on the timing analysis, so the inserted delays are
-(hopefully) way oversized.
+The graph was realized using four-phase bundled data.  Alas, I'm still
+working on the timing analysis, so the inserted delays are (hopefully)
+way oversized.
 
 # Tiny Tapeout Verilog Project Template
 

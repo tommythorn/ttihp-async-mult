@@ -31,10 +31,11 @@ loop:
 
 which was hand translated into a
 
-![token-flow graph](docs/graph.svg){:height="33%" width="33%"}
+![token-flow graph](docs/graph.svg)<img src="docs/graph.svg" width="33" height="33">
 
 (Note, I use a simpler, less expensive, construction for the
-conditional iteration as having independent control-flow for the trivial condition is overkill.)
+conditional iteration as having independent control-flow for the
+trivial condition is overkill.)
 
 The logic was implemented with four-phase bundled data.  Alas, I'm
 still working on the timing analysis, so the inserted delays are

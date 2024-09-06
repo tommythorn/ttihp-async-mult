@@ -4,19 +4,20 @@
 `include "tokenflow.h"
 
 /* This is a sad and wasteful way to slow down a signal */
-module min_delay(input wire x, output reg y);
 `ifdef SIM
-   always @* y = #1 x;
-`else
-   // sky130_fd_sc_hd__buf_1 buf_inst(.X(y), .A(x));
 
-   // XXX Seriously need to characterize this
-   // XXX add generate depending on the delays
-//   (* keep *)sky130_fd_sc_hd__dlygate4sd1_1 d0(.X(y), .A(x));
-   (* keep *) wire x_n = !x;
-   assign y = !x_n;
-`endif
+module min_delay(input wire x, output reg y);
+   always @* y = #1 x;
 endmodule
+
+`else
+
+module min_delay(input wire x, output wire y);
+   // XXX need to characterize this
+   (* keep *)sky130_fd_sc_hd__dlygate4sd1_1 d0(.X(y), .A(x));
+endmodule
+
+`endif
 
 /* verilator lint_off UNOPTFLAT */
 module comp_delay#(parameter delay = 10)
@@ -49,6 +50,17 @@ endmodule
 
 module cgate#(parameter init = 1'd0)
    (input wire reset, input wire a, input wire b, output wire q);
+
+   /*
+    The benefit of using a maj gate for this is that the critical
+    path is always within a standard cell and not subject the routing
+    adventures.  It's also (likely) denser than random logic, however
+    a dedicated C gate would be a bit smaller still.
+
+    I chose C as the feedback path as it appears to be the shortest
+    path to X.
+     */
+
    sky130_fd_sc_hd__maj3_2
      maj(.X(q), .A(reset ? init : a), .B(reset ? init : b), .C(q));
 endmodule
@@ -544,14 +556,14 @@ module tokenflow#(parameter w = 16)
    comp_join0 #(.w(3*w))                i1(reset, in_ch, c12ctl, c1);
 
    comp_merge #(.w(3*w))                i2(reset, c8, c1, c2);
-   comp_elem  #(.w(3*w), .delay(w))     i3(reset, c2, c3);
+   comp_elem  #(.w(3*w), .delay(3))     i3(reset, c2, c3);
    loop_cond  #(.w(w))                  i4(reset, c3, tc4);
    comp_bdemux#(.w(3*w))                i5(reset, tc4, c9, c5);
-   comp_elem  #(.w(3*w), .delay(3*w))   i6(reset, c5, c6);
+   comp_elem  #(.w(3*w), .delay(2*w))   i6(reset, c5, c6);
    mulstep    #(.w(w))                  i7(reset, c6, c7);
-   comp_elem  #(.w(3*w), .delay(3*w))   i8(reset, c7, c54);
+   comp_elem  #(.w(3*w), .delay(2*w))   i8(reset, c7, c54);
    mulstep    #(.w(w))                  i77(reset, c54, c55);
-   comp_elem  #(.w(3*w), .delay(w))     i78(reset, c55, c8);
+   comp_elem  #(.w(3*w), .delay(3))     i78(reset, c55, c8);
 
    comp_fork0 #(.w(3*w))                i9(reset, c9, ou_ch3, c10ctl);
    comp_elem0                           i10(reset, c10ctl, c11ctl);

@@ -12,7 +12,9 @@ module min_delay(input wire x, output reg y);
 
    // XXX Seriously need to characterize this
    // XXX add generate depending on the delays
-   sky130_fd_sc_hd__dlygate4sd1_2 d0(.X(y), .A(x));
+//   (* keep *)sky130_fd_sc_hd__dlygate4sd1_1 d0(.X(y), .A(x));
+   (* keep *) wire x_n = !x;
+   assign y = !x_n;
 `endif
 endmodule
 
@@ -26,7 +28,7 @@ module comp_delay#(parameter delay = 10)
    genvar i;
    generate
       for (i = 0; i < delay; i = i + 1)
-        min_delay min_delay_inst(inv_chain[i], inv_chain[i + 1]);
+        (* keep *) min_delay min_delay_inst(inv_chain[i], inv_chain[i + 1]);
    endgenerate
    assign y = inv_chain[delay] & x;
 endmodule
@@ -34,8 +36,8 @@ endmodule
 // Muller C element
 `ifdef SIM
 
-module cgate#(parameter init = 0)
-   (input reset, input a, input b, output reg q);
+module cgate#(parameter init = 1'd0)
+   (input wire reset, input wire a, input wire b, output reg q);
    always @*
      if (reset)
        q = init;
@@ -45,8 +47,8 @@ endmodule
 
 `else
 
-module cgate#(parameter init = 0)
-   (input reset, input a, input b, output wire q);
+module cgate#(parameter init = 1'd0)
+   (input wire reset, input wire a, input wire b, output wire q);
    sky130_fd_sc_hd__maj3_2
      maj(.X(q), .A(reset ? init : a), .B(reset ? init : b), .C(q));
 endmodule
@@ -172,7 +174,7 @@ endmodule
 `endif
 
 module comp_elem#(parameter w = 100,
-                  parameter valid = 0,
+                  parameter valid = 1'd0,
                   parameter data = 0,
                   parameter delay = 2)
    (input reset,
@@ -203,7 +205,7 @@ module comp_elem#(parameter w = 100,
 endmodule
 
 // Stupid Verilog
-module comp_elem0#(parameter valid = 0,
+module comp_elem0#(parameter valid = 1'd0,
                    parameter delay = 1)
    (input reset,
     inout `ctl x,
@@ -223,7 +225,7 @@ module comp_elemV#(parameter w = 1,
     inout `chan x,
     inout `chan y);
 
-   comp_elem #(.valid(1), .w(w), .data(data), .delay(delay)) i (reset, x, y);
+   comp_elem #(.valid(1'd1), .w(w), .data(data), .delay(delay)) i (reset, x, y);
 endmodule
 
 module comp_elemV0#(parameter delay = 1)
@@ -231,7 +233,7 @@ module comp_elemV0#(parameter delay = 1)
     inout `ctl x,
     inout `ctl y);
 
-   comp_elem0 #(.valid(1), .delay(delay)) i (reset, x, y);
+   comp_elem0 #(.valid(1'd1), .delay(delay)) i (reset, x, y);
 endmodule
 
 module comp_fork#(parameter w = 32)
@@ -291,8 +293,7 @@ endmodule
 // (z`req) + acknowledgement (z`ack) then the receiver can latch the
 // wrong data.  We thus have to delay the request by an amount that
 // exceeds the data delay
-module comp_merge#(parameter w = 32,
-                   parameter delay = 4)
+module comp_merge#(parameter w = 32)
    (input reset,
     inout `chan x, inout `chan y,
     inout `chan z);
@@ -301,7 +302,6 @@ module comp_merge#(parameter w = 32,
    cgate cg1(reset, x`req, !y`req, xactive);
    cgate cg2(reset, z`ack, x`req, x`ack);
    cgate cg3(reset, z`ack, y`req, y`ack);
-   //comp_delay #(delay) delay_inst(reset, x`req | y`req, z`req);
 // assign z`req = x`req | y`req; // RACY
    assign z`req = xactive ? x`req : y`req;
 
@@ -353,7 +353,7 @@ endmodule
 // comp_bdebug is like demux except the control comes bundled with
 // data and doesn't have its own handshake (this is cheaper)
 module comp_bdemux#(parameter w = 32)
-   (input reset,
+   (input _reset,
     inout [w+2:0] ctlx,
     inout `chan y, inout `chan z);
 
@@ -366,7 +366,7 @@ module comp_bdemux#(parameter w = 32)
 endmodule
 
 module comp_add1#(parameter w = 32)
-   (input reset,
+   (input _reset,
     inout `chan x,
     inout `chan y);
 
@@ -376,7 +376,7 @@ module comp_add1#(parameter w = 32)
 endmodule
 
 module comp_isnonzero#(parameter w = 32)
-   (input reset,
+   (input _reset,
     inout `chan x,
     inout [2:0] y);
 
@@ -386,7 +386,7 @@ module comp_isnonzero#(parameter w = 32)
 endmodule
 
 module comp_bundled_isnz#(parameter w = 32)
-   (input reset,
+   (input _reset,
     inout `chan x,
     inout [w+2:0] y);
 
@@ -402,7 +402,7 @@ endmodule
 // a *= 2
 // b /= 2
 module mulstep#(parameter w = 32)
-   (input reset,
+   (input _reset,
     inout `chan3 abc,
     inout `chan3 new_abc);
    wire [w-1:0] a = abc`data2;
@@ -416,7 +416,7 @@ endmodule
 
 
 module loop_cond#(parameter w = 32)
-   (input reset,
+   (input _reset,
     inout `chan3 abc,
     inout [3*w+2:0] tabc);
    wire [w-1:0] a = abc`data2;
@@ -435,7 +435,7 @@ module tokenflow#(parameter w = 16)
    wire `chan3 in_ch;
    wire `chan3 ou_ch3;
 
-   wire `chan ci0, ci1, ci2, ci3, ci4, ci5, ci6, ci7, counter_ch;
+   wire `chan ci0, ci1, ci2, ci3, ci4, counter_ch;
 
 /*
      _______________________________________________________
@@ -472,30 +472,49 @@ module tokenflow#(parameter w = 16)
    assign ou_ch3`ack = ou_ch`ack;
 
    /*
-    * input (a,b,c)
-    * while b != 0:
-    *   if (b&1) == 1:
-    *     c += a
-    *   a *= 2
-    *   b /= 2
-    * output (c)
+    * x = 0
+    * loop:
+    *   x = x + 1
+    *   b = x
+    *   while b != 0:
+    *     if (b&1) == 1:
+    *       c += a
+    *     a *= 2
+    *     b /= 2
+    *   output (c)
+    *
+    * add1 ci0          -> ci1
+    * elem ci1          -> ci2                  w L
+    * elem ci2          -> ci3                  w L
+    * elemV ci3         -> ci4                  w L
+    * fork ci4          -> (ci0, counter_ch)
+    *
+    * in = (counter, counter, counter)
     *
     * // while b != 0:
-    * join {a_in,b_in,c_in} c12 -> c1
+    * join in c12       -> c1
     *
     * merge c8 c1       -> c2                   3 C + 1 D
-    * elem c2           -> c3                   1 C + 1 D + w L
+    * elem c2           -> c3                   1 C + 1 D + 3w L
     * loop_cond c3[xx]  -> c4
     * bdemux c4         -> (c5, c9)
-    * elem c5           -> c6                   1 C + 1 D + w L
+    * elem c5           -> c6                   1 C + 1 D + 3w L
     * mulstep c6        -> c7
-    * elem c7           -> c8                   1 C + 1 D + w L
+    * elem c7           -> c54                  1 C + 1 D + 3w L
+    * mulstep c54       -> c55
+    * elem c55          -> c8                   1 C + 1 D + 3w L
     *
     * fork c9           -> (ou_ch3, c10)        1 C
     * elem c10          -> c11                  1 C + 1 D
     * elemV c11         -> c12                  1 C + 1 D
     *
     * output ou_ch3
+    * ===========================================================
+    * ~ 15w Latches
+    *
+    * XXX Note, there are many ways to improve this algorithm; this
+    * is just a little async example.
+    *
     */
 
    wire `chan3 c1, c2, c3, c5, c54, c55, c6, c7, c8, c9;
@@ -522,39 +541,19 @@ module tokenflow#(parameter w = 16)
 `endif
 
    // while a != 0
-   comp_join0 #(3*w)    i1(reset, in_ch, c12ctl, c1);
+   comp_join0 #(.w(3*w))                i1(reset, in_ch, c12ctl, c1);
 
-   comp_merge #(3*w)    i2(reset, c8, c1, c2);
-   comp_elem #(3*w, w)  i3(reset, c2, c3);
-   loop_cond #(w)       i4(reset, c3, tc4);
-   comp_bdemux #(3*w)   i5(reset, tc4, c9, c5);
-   comp_elem #(3*w, 3*w) i6(reset, c5, c6);
-   mulstep #(w)         i7(reset, c6, c7);
-   comp_elem  #(3*w, 3*w) i8(reset, c7, c54);
-   mulstep #(w)         i77(reset, c54, c55);
-   comp_elem  #(3*w)    i78(reset, c55, c8);
+   comp_merge #(.w(3*w))                i2(reset, c8, c1, c2);
+   comp_elem  #(.w(3*w), .delay(w))     i3(reset, c2, c3);
+   loop_cond  #(.w(w))                  i4(reset, c3, tc4);
+   comp_bdemux#(.w(3*w))                i5(reset, tc4, c9, c5);
+   comp_elem  #(.w(3*w), .delay(3*w))   i6(reset, c5, c6);
+   mulstep    #(.w(w))                  i7(reset, c6, c7);
+   comp_elem  #(.w(3*w), .delay(3*w))   i8(reset, c7, c54);
+   mulstep    #(.w(w))                  i77(reset, c54, c55);
+   comp_elem  #(.w(3*w), .delay(w))     i78(reset, c55, c8);
 
-   comp_fork0  #(3*w)   i9(reset, c9, ou_ch3, c10ctl);
-   comp_elem0           i10(reset, c10ctl, c11ctl);
-   comp_elemV0          i11(reset, c11ctl, c12ctl);
-
-   // Extract signals for better viewing in Surfer
-   wire [3*w-1:0] c1_data = c1[3*w+1:2];
-   wire [3*w-1:0] c2_data = c2[3*w+1:2];
-   wire [3*w-1:0] c3_data = c3[3*w+1:2];
-   wire [3*w-1:0] c8_data = c8[3*w+1:2];
-
-   wire c1_req = c1`req;
-   wire c2_req = c2`req;
-   wire c3_req = c3`req;
-   wire c8_req = c8`req;
-
-   wire c1_ack = c1`ack;
-   wire c2_ack = c2`ack;
-   wire c3_ack = c3`ack;
-   wire c8_ack = c8`ack;
-
-   wire c8_active;
-   cgate cg(reset, c8_req, c1_req, c8_active);
-   wire [3*w-1:0] c2_data_wtf = c8_active ? c8_data : c1_data;
+   comp_fork0 #(.w(3*w))                i9(reset, c9, ou_ch3, c10ctl);
+   comp_elem0                           i10(reset, c10ctl, c11ctl);
+   comp_elemV0                          i11(reset, c11ctl, c12ctl);
 endmodule

@@ -18,15 +18,16 @@ module tt_um_tommythorn_maxbw (
     input  wire       rst_n     // reset_n - low to reset
 );
 
-   parameter          w = 16;
+   parameter          w = 26; // All I can fit in a single tile
    wire               reset = !rst_n;
    wire               `chan ou_ch;
-   wire               dummy;
 
    tokenflow #(w) tokenflow_inst(reset, ou_ch);
 
+   wire [14:0]        result15 = (ou_ch`data >> 15) ^ ou_ch`data;
+
    assign uio_oe = ~0;
-   assign {dummy, uio_out, uo_out} = {ou_ch`data, ou_ch`req};
+   assign {uio_out, uo_out} = {result15, ou_ch`req};
    assign ou_ch`ack = ui_in[0];
 
    // List all unused inputs to prevent warnings

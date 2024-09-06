@@ -487,7 +487,7 @@ module tokenflow#(parameter w = 16)
     * x = 0
     * loop:
     *   x = x + 1
-    *   b = x
+    *   a = b c = x
     *   while b != 0:
     *     if (b&1) == 1:
     *       c += a

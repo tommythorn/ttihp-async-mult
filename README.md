@@ -1,5 +1,43 @@
 ![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
 
+# A simple asynchronous multiplier example
+
+This is closely following [Introduction to Asynchronous Circuit Design](https://orbit.dtu.dk/files/215895041/JSPA_async_book_2020_PDF.pdf)
+
+This design emits a sequence of `r` = x^2+x, for x=0,1,2,... on the
+outputs using the handshake protocol (tie ack to req to get free
+running sequence).  Well, in truth, we use 26-bits of internal
+precision, but we only have 15-bits for outputs, we what is actually
+emitted is `r ^ (r >> 15)`.
+
+The very naive algorithm (with the body unrolled once) is
+
+``` python
+x = 0
+loop:
+  x = x + 1
+  a = b = c = x
+  while b != 0:
+    if (b & 1) == 1:
+      c += a
+    a *= 2
+    b /= 2
+    if (b & 1) == 1:
+      c += a
+    a *= 2
+    b /= 2
+  output (c)
+```
+
+which was hand translated into a
+![token-flow graph](docs/graph.svg) <img src="docs/graph.svg">
+(Note, I use a simpler, less expensive, construction for the
+conditional iteration.)
+
+The logic was implemented with four-phase bundled data.  Alas, I'm
+still working on the timing analysis, so the inserted delays are
+(hopefully) way oversized.
+
 # Tiny Tapeout Verilog Project Template
 
 - [Read the documentation for project](docs/info.md)

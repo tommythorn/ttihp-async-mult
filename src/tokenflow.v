@@ -4,15 +4,15 @@
 `include "tokenflow.h"
 
 /* This is a sad and wasteful way to slow down a signal */
-module min_delay(input wire reset, input wire x, output reg y);
+module min_delay(input wire x, output reg y);
 `ifdef SIM
-   always @* y = #1 !reset & x;
+   always @* y = #1 x;
 `else
    // sky130_fd_sc_hd__buf_1 buf_inst(.X(y), .A(x));
 
    // XXX Seriously need to characterize this
    // XXX add generate depending on the delays
-   sky130_fd_sc_hd__dlygate4sd3_2 d0(.X(y), .A(x));
+   sky130_fd_sc_hd__dlygate4sd1_2 d0(.X(y), .A(x));
 `endif
 endmodule
 
@@ -21,12 +21,12 @@ module comp_delay#(parameter delay = 10)
    (input wire reset, input x, output wire y);
 
    (* keep *) wire [delay:0] inv_chain;
-   assign inv_chain[0] = x;
+   assign inv_chain[0] = !reset & x;
 
    genvar i;
    generate
       for (i = 0; i < delay; i = i + 1)
-        min_delay min_delay_inst(reset, inv_chain[i], inv_chain[i + 1]);
+        min_delay min_delay_inst(inv_chain[i], inv_chain[i + 1]);
    endgenerate
    assign y = inv_chain[delay] & x;
 endmodule

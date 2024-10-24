@@ -14,7 +14,7 @@ endmodule
 
 module min_delay(input wire x, output wire y);
    // XXX need to characterize this
-   (* keep *)sky130_fd_sc_hd__dlygate4sd1_1 d0(.X(y), .A(x));
+   (* keep *)sg13g2_dlygate4sd3_1 d0(.X(y), .A(x));
 endmodule
 
 `endif
@@ -49,20 +49,9 @@ endmodule
 `else
 
 module cgate#(parameter init = 1'd0)
-   (input wire reset, input wire a, input wire b, output wire q);
+   (input wire reset, input wire a, input wire b, output reg q);
 
-   /*
-    The benefit of using a maj gate for this is that the critical
-    path is always within a standard cell and not subject the routing
-    adventures.  It's also (likely) denser than random logic, however
-    a dedicated C gate would be a bit smaller still.
-
-    I chose C as the feedback path as it appears to be the shortest
-    path to X.
-     */
-
-   sky130_fd_sc_hd__maj3_2
-     maj(.X(q), .A(reset ? init : a), .B(reset ? init : b), .C(q));
+   always @(*) if (init) q <= init; else if (a == b) q <= #1 a;
 endmodule
 
 `endif

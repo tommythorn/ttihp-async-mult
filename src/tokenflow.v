@@ -280,13 +280,13 @@ module comp_join0#(parameter w = 32)
    cgate c(reset, x`req, y`req, z`req);
 endmodule
 
-// XXX Merge is trick.  As best I can tell, the book verion is wrong
+// XXX Merge is tricky.  As best I can tell, the book version is wrong
 // as the mux being guided directly by x`req (or conversely y`req)
 // means that data can change as soon as the input request is dropped
-// while the consumer is still sampling (z`ack).
+// while the consumer is still sampling (z`ack not asserted).
 //
-// The fix seems to be a driving the mux from a C gate of x`req,
-// !y`req.  However this leads to a small race/gitch as the C gate is
+// The fix seems to be a driving the mux from a C gate of x`req and
+// !y`req.  However this leads to a potential for small race/gitch as the C gate is
 // slower than the OR gate driving z`req.
 
 // Also?:

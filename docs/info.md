@@ -49,13 +49,34 @@ The graph was realized using four-phase bundled data.  Alas, I'm still
 working on the timing analysis, so the inserted delays are (hopefully)
 way oversized.
 
+
 ## How to test
 
-The data is presented using the standard 4-phase (RTZ) protocol (idle,
-Req, Req+Ack, Ack, idle, ...).  To get a continuous stream, simply tie
-ack to req.  The values expected are 0, 2, 6, ..., x(x+1)
+As soon as reset is deasserted (ie. `rstn` going high), the design
+calculates values r ^ (r >> 15), where r = x^2+x, for x=0,1,2,...,
+thus 0 2 6 12 20 30 42 56 72 90 110 132 156 182 ...
+
+The data is presented on uo[7:1] using the 4-phase (RTZ) handshaking
+with req (uo[0]) and ack (ui[0]).  Req is asserted when data is valid
+and remain asserted until Ack is asserted to signal that the data has
+been sampled.  Ack remains asserted until Req deasserts.  Thus, the
+four possible (Req,Ack) combinations can be summarized
+
+req ack | phase
+--------|------
+0 0     | Idle (no data available and receive is ready)
+1 0     | Data is available
+1 1     | Data is available but receiver have captured it
+0 1     | Sender saw receive acknowledge and is waiting for idle
+
+Note, the protocol must cycle through all four phases and in that
+order.
+
+For a quick free running test, we can simply tie ack to req, thus the
+time spent in phase 1 and 2 will be nearly immeasurably small.
+
 
 ## External hardware
 
-A logic analyzer is convenient to pick up the values on the outputs, but
-default RP2040 works fine.
+A logic analyzer is convenient to pick up the values on the outputs,
+but default RP2040 works fine.
